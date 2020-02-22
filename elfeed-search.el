@@ -727,7 +727,6 @@ When FORCE is non-nil, redraw even when the database hasn't changed."
           (dolist (entry elfeed-search-entries)
             (funcall elfeed-search-print-entry-function entry)
             (insert "\n"))
-          (insert "End of entries.\n")
           (setf elfeed-search-last-update (float-time))))
       (run-hooks 'elfeed-search-update-hook))))
 
