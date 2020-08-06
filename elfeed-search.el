@@ -95,7 +95,10 @@ When live editing the filter, it is bound to :live.")
   "Function that returns the string to be used for the Elfeed search header.")
 
 (defvar elfeed-search-print-entry-function #'elfeed-search-print-entry--default
-  "Function to print entries into the *elfeed-search* buffer.")
+  "Function to print individual entry into the *elfeed-search* buffer.")
+
+(defvar elfeed-search-print-entries-function #'elfeed-search-print-entries--default
+  "Function to print entries in the *elfeed-search* buffer.")
 
 (defalias 'elfeed-search-tag-all-unread
   (elfeed-expose #'elfeed-search-tag-all 'unread)
@@ -703,6 +706,18 @@ expression, matching against entry link, title, and feed title."
                              line))
          (move-to-column column)))))
 
+(defun elfeed-search-print-entries--default ()
+  "Display the search entries."
+  (elfeed-save-excursion
+    (let ((inhibit-read-only t)
+          (standard-output (current-buffer)))
+      (erase-buffer)
+      (elfeed-search--update-list)
+      (dolist (entry elfeed-search-entries)
+        (funcall elfeed-search-print-entry-function entry)
+        (insert "\n"))
+      (insert "End of entries.\n"))))
+
 (defun elfeed-search-update (&optional force)
   "Update the elfeed-search buffer listing to match the database.
 When FORCE is non-nil, redraw even when the database hasn't changed."
@@ -710,16 +725,8 @@ When FORCE is non-nil, redraw even when the database hasn't changed."
   (with-current-buffer (elfeed-search-buffer)
     (when (or force (and (not elfeed-search-filter-active)
                          (< elfeed-search-last-update (elfeed-db-last-update))))
-      (elfeed-save-excursion
-        (let ((inhibit-read-only t)
-              (standard-output (current-buffer)))
-          (erase-buffer)
-          (elfeed-search--update-list)
-          (dolist (entry elfeed-search-entries)
-            (funcall elfeed-search-print-entry-function entry)
-            (insert "\n"))
-          (insert "End of entries.\n")
-          (setf elfeed-search-last-update (float-time))))
+      (funcall elfeed-search-print-entries-function)
+      (setf elfeed-search-last-update (float-time))
       (run-hooks 'elfeed-search-update-hook))))
 
 (defun elfeed-search-fetch (prefix)
